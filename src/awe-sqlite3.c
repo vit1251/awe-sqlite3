@@ -10,18 +10,33 @@ napi_value create_addon(napi_env env) {
   napi_value result;
   NAPI_CALL(env, napi_create_object(env, &result));
 
-  napi_value exported_function;
+  /* Open */
+  napi_value awe_sqlite3_open_export;
   NAPI_CALL(env, napi_create_function(env,
                                       "open",
                                       NAPI_AUTO_LENGTH,
                                       awe_sqlite3_open,
                                       NULL,
-                                      &exported_function));
+                                      &awe_sqlite3_open_export));
 
   NAPI_CALL(env, napi_set_named_property(env,
                                          result,
                                          "open",
-                                         exported_function));
+                                         awe_sqlite3_open_export));
+
+  /* Close */
+  napi_value awe_sqlite3_close_export;
+  NAPI_CALL(env, napi_create_function(env,
+                                      "close",
+                                      NAPI_AUTO_LENGTH,
+                                      awe_sqlite3_close,
+                                      NULL,
+                                      &awe_sqlite3_close_export));
+
+  NAPI_CALL(env, napi_set_named_property(env,
+                                         result,
+                                         "close",
+                                         awe_sqlite3_close_export));
 
   return result;
 }

@@ -18,3 +18,4 @@
   } while(0)
 
 napi_value awe_sqlite3_open(napi_env env, napi_callback_info info);
+napi_value awe_sqlite3_close(napi_env env, napi_callback_info info);

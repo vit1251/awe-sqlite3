@@ -4,7 +4,11 @@ project (awe-sqlite3)
 
 include_directories(${CMAKE_JS_INC})
 
-file(GLOB SOURCE_FILES "src/awe-sqlite3.c" "src/awe-sqlite3-open.c")
+file(GLOB SOURCE_FILES
+    "src/awe-sqlite3.c"
+    "src/awe-sqlite3-open.c"
+    "src/awe-sqlite3-close.c"
+)
 
 find_package (SQLite3)
 include_directories(${SQLITE3_INCLUDE_DIRS})
