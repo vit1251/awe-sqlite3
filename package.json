@@ -1,6 +1,6 @@
 {
   "name": "awe-sqlite3",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Vitold Sedyshev <vit1251@gmail.com>",
   "contributors": [],
   "description": "Awe SQLite is pure C async/await implemenation sqlite3 driver",
