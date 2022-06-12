@@ -2,9 +2,8 @@
 import assert from 'assert';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
-const awe = require('../build/Release/awe-sqlite3.node');
-const { open, exec, close } = awe;
-
+import awe from '../lib/index.cjs';
+const {open, exec, close} = awe;
 
 describe('Awe SQLite3', () => {
 
