@@ -1,12 +1,15 @@
 {
   "name": "awe-sqlite3",
   "version": "0.0.2",
+  "author": "Vitold Sedyshev <vit1251@gmail.com>",
+  "contributors": [],
   "description": "Awe SQLite is pure C async/await implemenation sqlite3 driver",
   "keywords": [
     "sqlite3",
     "sqlite",
     "async",
-    "napi"
+    "napi",
+    "binding"
   ],
   "homepage": "https://github.com/vit1251/awe-sqlite3",
   "license": "MIT",
@@ -15,10 +18,15 @@
     "install": "cmake-js compile",
     "test": "mocha --recursive --color"
   },
+  "main": "lib/",
   "dependencies": {
+    "bindings": "^1.5.0",
     "cmake-js": "^6.3.2"
   },
   "devDependencies": {
     "mocha": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=16"
   }
 }
