@@ -24,6 +24,20 @@ napi_value create_addon(napi_env env) {
                                          "open",
                                          awe_sqlite3_open_export));
 
+  /* Exec */
+  napi_value awe_sqlite3_exec_export;
+  NAPI_CALL(env, napi_create_function(env,
+                                      "exec",
+                                      NAPI_AUTO_LENGTH,
+                                      awe_sqlite3_exec,
+                                      NULL,
+                                      &awe_sqlite3_exec_export));
+
+  NAPI_CALL(env, napi_set_named_property(env,
+                                         result,
+                                         "exec",
+                                         awe_sqlite3_exec_export));
+
   /* Close */
   napi_value awe_sqlite3_close_export;
   NAPI_CALL(env, napi_create_function(env,

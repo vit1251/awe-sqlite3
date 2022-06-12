@@ -8,6 +8,7 @@ file(GLOB SOURCE_FILES
     "src/awe-sqlite3.c"
     "src/awe-sqlite3-open.c"
     "src/awe-sqlite3-close.c"
+    "src/awe-sqlite3-exec.c"
 )
 
 find_package (SQLite3)
