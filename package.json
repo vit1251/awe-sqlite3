@@ -1,8 +1,13 @@
 {
   "name": "awe-sqlite3",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Awe SQLite is pure C async/await implemenation sqlite3 driver",
-  "keywords": ["sqlite3", "sqlite", "async", "napi"],
+  "keywords": [
+    "sqlite3",
+    "sqlite",
+    "async",
+    "napi"
+  ],
   "homepage": "https://github.com/vit1251/awe-sqlite3",
   "license": "MIT",
   "type": "module",
