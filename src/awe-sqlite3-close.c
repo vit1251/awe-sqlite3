@@ -51,28 +51,55 @@ awe_sqlite3_close(napi_env env, napi_callback_info info) {
   napi_value argv[2];
   napi_status status;
   struct awe_sqlite3 *userdata = NULL;
+  struct awe_sqlite3_close *ptr = NULL;
 
   status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
   if (status != napi_ok) {
-//      return NULL;
+    goto on_error;
   }
 
   status = napi_get_value_external(env, argv[0], &userdata);
   if (status != napi_ok) {
-//      return NULL;
+    goto on_error;
   }
 
   /* Step 2. Debug message */
-  fprintf(stdout, "debug: Close SQLite3 connection #%d\n", userdata->index);
+#ifdef _DEBUG
+  fprintf(stderr, "debug: Close SQLite3 session %u\n", userdata->index);
+#endif
 
   /* Step 3. Setup promise about close connection */
-  struct awe_sqlite3_close *ptr = (struct awe_sqlite3_close *)malloc(sizeof(struct awe_sqlite3_close));
+  ptr = (struct awe_sqlite3_close *)malloc(sizeof(struct awe_sqlite3_close));
+  if (ptr == NULL) {
+    goto on_error;
+  }
   ptr->db = userdata->db;
   userdata->db = NULL;
 
-  NAPI_CALL(env, napi_create_promise(env, &ptr->deferred, &promise));
-  NAPI_CALL(env, napi_create_string_utf8(env, "awe-sqlite3-close", NAPI_AUTO_LENGTH, &resource_name));
-  NAPI_CALL(env, napi_create_async_work(env, NULL, resource_name, awe_sqlite3_close_work, awe_sqlite3_close_done, (void *)ptr, &ptr->worker));
-  NAPI_CALL(env, napi_queue_async_work(env, ptr->worker));
+  status = napi_create_promise(env, &ptr->deferred, &promise);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
+  status = napi_create_string_utf8(env, "awe-sqlite3-close", NAPI_AUTO_LENGTH, &resource_name);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
+  status = napi_create_async_work(env, NULL, resource_name, awe_sqlite3_close_work, awe_sqlite3_close_done, (void *)ptr, &ptr->worker);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
+  status = napi_queue_async_work(env, ptr->worker);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
   return promise;
+on_error:
+  free(ptr);
+  const char *message = "error";
+  napi_throw_error(env, NULL, message);
+  return NULL;
 }

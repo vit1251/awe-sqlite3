@@ -17,7 +17,7 @@ struct awe_sqlite3_exec {
 };
 
 static void
-awe_sqlite3_exec_work(napi_env env, void* data) {
+awe_sqlite3_exec_execute(napi_env env, void* data) {
   struct awe_sqlite3_exec *arg = (struct awe_sqlite3_exec *)data;
   int rc;
   char *err_msg = NULL;
@@ -25,8 +25,11 @@ awe_sqlite3_exec_work(napi_env env, void* data) {
   /* Step 1. Perform SQL query */
   rc = sqlite3_exec(arg->db, arg->query, 0, 0, &err_msg);
   if (rc != SQLITE_OK) {
-    fprintf(stdout, "error: %s", err_msg);
   }
+
+#ifdef _DEBUG
+  fprintf(stderr, "error: Execute complete: rc = %u msg = %s\n", rc, err_msg);
+#endif
 
   /* Step 2. Save error code */
   arg->code = rc;
@@ -34,7 +37,7 @@ awe_sqlite3_exec_work(napi_env env, void* data) {
 }
 
 static void
-awe_sqlite3_exec_done(napi_env env, napi_status status, void* data) {
+awe_sqlite3_exec_complete(napi_env env, napi_status status, void* data) {
   struct awe_sqlite3_exec *arg = (struct awe_sqlite3_exec *)data;
   napi_value ret;
 
@@ -53,6 +56,8 @@ awe_sqlite3_exec_done(napi_env env, napi_status status, void* data) {
   free(arg);
 }
 
+#define MAX_QUERY_SIZE 32768
+
 napi_value
 awe_sqlite3_exec(napi_env env, napi_callback_info info) {
   napi_value promise;
@@ -62,36 +67,69 @@ awe_sqlite3_exec(napi_env env, napi_callback_info info) {
   napi_status status;
   struct awe_sqlite3 *userdata = NULL;
   char *query = NULL;
-
+  struct awe_sqlite3_exec *ptr = NULL;
 
   status = napi_get_cb_info(env, info, &argc, argv, NULL, NULL);
   if (status != napi_ok) {
-//      return NULL;
+    goto on_error;
   }
 
   status = napi_get_value_external(env, argv[0], &userdata);
   if (status != napi_ok) {
-//      return NULL;
+    goto on_error;
   }
 
-  query = (char *)malloc(65536);
+  query = (char *)malloc(MAX_QUERY_SIZE);
+  if (query == NULL) {
+    goto on_error;
+  }
+
   status = napi_get_value_string_utf8(env,
                                        argv[1],
                                        query,
-                                       65536,
+                                       MAX_QUERY_SIZE,
                                        NULL);
+  if (status != napi_ok) {
+    goto on_error;
+  }
 
-  /* Step 2. Debug message */
-  fprintf(stdout, "debug: Exec SQLite3 query on connection #%d with SQL = %s\n", userdata->index, query);
+#ifdef _DEBUG
+  fprintf(stderr, "debug: Execute SQLite3 session %u query `%s`\n", userdata->index, query);
+#endif
 
   /* Step 3. Setup promise about close connection */
-  struct awe_sqlite3_exec *ptr = (struct awe_sqlite3_exec *)malloc(sizeof(struct awe_sqlite3_exec));
+  ptr = (struct awe_sqlite3_exec *)malloc(sizeof(struct awe_sqlite3_exec));
+  if (ptr == NULL) {
+    goto on_error;
+  }
   ptr->db = userdata->db;
   ptr->query = query;
 
-  NAPI_CALL(env, napi_create_promise(env, &ptr->deferred, &promise));
-  NAPI_CALL(env, napi_create_string_utf8(env, "awe-sqlite3-exec", NAPI_AUTO_LENGTH, &resource_name));
-  NAPI_CALL(env, napi_create_async_work(env, NULL, resource_name, awe_sqlite3_exec_work, awe_sqlite3_exec_done, (void *)ptr, &ptr->worker));
-  NAPI_CALL(env, napi_queue_async_work(env, ptr->worker));
+  status = napi_create_promise(env, &ptr->deferred, &promise);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
+  status = napi_create_string_utf8(env, "awe-sqlite3-exec", NAPI_AUTO_LENGTH, &resource_name);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
+  status = napi_create_async_work(env, NULL, resource_name, awe_sqlite3_exec_execute, awe_sqlite3_exec_complete, (void *)ptr, &ptr->worker);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
+  status = napi_queue_async_work(env, ptr->worker);
+  if (status != napi_ok) {
+    goto on_error;
+  }
+
   return promise;
+on_error:
+  free(query);
+  free(ptr);
+  const char *message = "error";
+  napi_throw_error(env, NULL, message);
+  return NULL;
 }
