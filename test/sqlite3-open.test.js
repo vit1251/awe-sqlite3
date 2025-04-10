@@ -24,27 +24,29 @@ describe('Awe SQLite3', () => {
       await close(conn1);
     });
 
-    it('should OK when processing 100 sequential valid SQL query', async () => {
+    it('should OK when processing 1000 sequential valid SQL query', async () => {
       const conn1 = await open('./exec_2.sqlite3');
       await exec(conn1, "CREATE TABLE contacts (" +
          "contact_id INTEGER PRIMARY KEY, " +
          "first_name TEXT NOT NULL" +
          ");");
-      for (let i = 0; i < 100; i++) {
+      const resolves = [];
+      for (let i = 0; i < 1000; i++) {
         const code = await exec(conn1, `INSERT INTO contacts (contact_id, first_name) VALUES (${i}, 'user_${i}')`);
-        console.log(code);
+        resolves.push(code);
       }
+      console.log(resolves);
       await close(conn1);
     });
 
-    it('should OK when processing 100 parallel valid SQL query', async () => {
+    it('should OK when processing 1000 parallel valid SQL query', async () => {
       const conn1 = await open('./exec_3.sqlite3');
       await exec(conn1, "CREATE TABLE contacts (" +
          "contact_id INTEGER PRIMARY KEY, " +
          "first_name TEXT NOT NULL" +
          ");");
       const promises = [];
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 1000; i++) {
         const query = `INSERT INTO contacts (contact_id, first_name) VALUES (${i}, 'user_${i}')`;
         const promise = exec(conn1, query);
         promises.push(promise);

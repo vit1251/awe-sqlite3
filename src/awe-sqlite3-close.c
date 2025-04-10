@@ -7,37 +7,49 @@
 #include "awe-sqlite3.h"
 
 struct awe_sqlite3_close {
+  unsigned index;
   napi_async_work worker;
   napi_deferred deferred;
   sqlite3 *db;
+  int err;
 };
 
 static void
-awe_sqlite3_close_work(napi_env env, void* data) {
+awe_sqlite3_close_execute(napi_env env, void* data) {
   struct awe_sqlite3_close *arg = (struct awe_sqlite3_close *)data;
-  int ok;
+  int rc;
 
   /* Step 1. Close SQLite3 database */
-  ok = sqlite3_close(arg->db);
-  if (ok != SQLITE_OK) {
+  rc = sqlite3_close(arg->db);
+  if (rc != SQLITE_OK) {
   }
+
+  /* Step 2. Debug message */
+#ifdef _DEBUG
+  fprintf(stderr, "debug: SQLite3 session %u close: rc = %u\n", arg->index, rc);
+#endif
+
+  /* Step 3. Save error code */
+  arg->err = rc;
 
 }
 
 static void
-awe_sqlite3_close_done(napi_env env, napi_status status, void* data) {
+awe_sqlite3_close_complete(napi_env env, napi_status status, void* data) {
   struct awe_sqlite3_close *arg = (struct awe_sqlite3_close *)data;
   napi_value ret;
 
-  if (arg->db != NULL) {
-    napi_create_int32(env, 1, &ret);
+  if (arg->err == SQLITE_OK) {
+    napi_create_int32(env, 0, &ret);
     napi_resolve_deferred(env, arg->deferred, ret);
-  } else {
+  }
+
+  if (arg->err != SQLITE_OK) {
     napi_create_int32(env, 0, &ret);
     napi_reject_deferred(env, arg->deferred, ret);
   }
+
   napi_delete_async_work(env, arg->worker);
-  arg->deferred = NULL;
 
   /* Release memory */
   free(arg);
@@ -73,8 +85,10 @@ awe_sqlite3_close(napi_env env, napi_callback_info info) {
   if (ptr == NULL) {
     goto on_error;
   }
-  ptr->db = userdata->db;
+  ptr->index = userdata->index;
+  ptr->db = userdata->db; // Important!!!
   userdata->db = NULL;
+  ptr->err = 0;
 
   status = napi_create_promise(env, &ptr->deferred, &promise);
   if (status != napi_ok) {
@@ -86,7 +100,7 @@ awe_sqlite3_close(napi_env env, napi_callback_info info) {
     goto on_error;
   }
 
-  status = napi_create_async_work(env, NULL, resource_name, awe_sqlite3_close_work, awe_sqlite3_close_done, (void *)ptr, &ptr->worker);
+  status = napi_create_async_work(env, NULL, resource_name, awe_sqlite3_close_execute, awe_sqlite3_close_complete, (void *)ptr, &ptr->worker);
   if (status != napi_ok) {
     goto on_error;
   }
