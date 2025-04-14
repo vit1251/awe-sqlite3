@@ -3,7 +3,7 @@
 Awe SQlite3 is pure C implementation database connection provide pure async/await 
 SQLite3 C API function invokation.
 
-Example usage:
+## Example usage
 
 ```javascript
 import { open, exec, close } from 'awe-sqlite3';
@@ -17,3 +17,12 @@ const code = await exec(conn1, `INSERT INTO contacts (contact_id, first_name) VA
 console.log(code);
 await close(conn1);
 ```
+
+## Benchmark
+
+| Module     | Operation | Count | Duration    |
+| ---------- | --------- | ----- | ----------- |
+| sqlite     | INSERT    |  1000 | 1.654 sec.  |
+| awe-sqlite | INSERT    |  1000 | 1.290 sec.  |
+
+Execute on Node v22.x
