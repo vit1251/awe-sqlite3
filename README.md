@@ -6,23 +6,25 @@ SQLite3 C API function invokation.
 ## Example usage
 
 ```javascript
-import { open, exec, close } from 'awe-sqlite3';
+import { Database } from 'awe-sqlite3';
 
-const conn1 = await open('example.sqlite3');
-await exec(conn1, "CREATE TABLE contacts (" +
+const db = new Database();
+await db.Open('example.sqlite3');
+await db.Exec("CREATE TABLE contacts (" +
       "contact_id INTEGER PRIMARY KEY, " +
       "first_name TEXT NOT NULL" +
       ");");
-const code = await exec(conn1, `INSERT INTO contacts (contact_id, first_name) VALUES (${i}, 'user_${i}')`);
-console.log(code);
-await close(conn1);
+await db.Exec(`INSERT INTO contacts (contact_id, first_name) VALUES (${i}, 'user_${i}')`);
+await db.Close();
 ```
 
 ## Benchmark
 
-| Module     | Operation | Count | Duration    |
-| ---------- | --------- | ----- | ----------- |
-| sqlite     | INSERT    |  1000 | 1.654 sec.  |
-| awe-sqlite | INSERT    |  1000 | 1.290 sec.  |
+| Module              | Operation | Count | Duration    |
+| ------------------- | --------- | ----- | ----------- |
+| sqlite (seq)        | INSERT    |  1000 | 1.654 sec.  |
+| awe-sqlite v1 (sim) | INSERT    |  1000 | 1.290 sec.  |
+| awe-sqlite v2 (seq) | INSERT    |  1000 | 1.338 sec.  |
+| awe-sqlite v2 (sim) | INSERT    |  1000 | 1.217 sec.  |
 
 Execute on Node v22.x
